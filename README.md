@@ -1,11 +1,9 @@
 # Social Media Scheduler
 
-## Project Overview
 
 The **Social Media Scheduler** is a web-based application that allows users to create, plan, and schedule social media posts across platforms like **Facebook, Twitter, and LinkedIn**.
 It helps manage content efficiently by setting post dates, uploading images, and ensuring timely delivery.
 
----
 
 ## Features
 
@@ -17,16 +15,7 @@ It helps manage content efficiently by setting post dates, uploading images, and
 * Dynamic UI updates
 * Toast notifications for user actions
 
----
 
-## Project Screenshots
-
-* Project UI – Scheduler Dashboard
-* Project UI – Post Creation Screen
-
-*(Screenshots can be added in the `/assets` folder and linked here)*
-
----
 
 ## Tech Stack & Tools
 
@@ -36,7 +25,6 @@ It helps manage content efficiently by setting post dates, uploading images, and
 * **LocalStorage API** – Data persistence
 * **Font Awesome** – Icons and UI enhancements
 
----
 
 ## Getting Started
 
@@ -51,7 +39,6 @@ git clone https://github.com/Ananya142/Scheduler-app.git
 * Open `index.html` in any modern browser
 * No server or build step required
 
----
 
 ## Project Structure
 
@@ -64,7 +51,6 @@ social-post-planner/
 └── assets/         # Images & icons
 ```
 
----
 
 ## Codebase Analysis
 
@@ -94,8 +80,6 @@ Key concepts used:
 * Toast messages
 * Unique ID generation
 
----
-
 
 ## Why React is a Better Solution
 
@@ -108,15 +92,5 @@ React addresses these problems by:
 * Easier maintenance and scalability
 * Routing support using React Router
 
----
 
 
-## Author
-
-**Ananya**
-
----
-
-## License
-
-This project is for educational purposes.
