@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Platform } from '@/types/post';
+import * as React from 'react';
+import { ScheduledPost } from '@/types/post';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,20 @@ import { PlatformSelector } from './PlatformSelector';
 import { ImageUpload } from './ImageUpload';
 import { toast } from 'sonner';
 import { Calendar, Clock } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const createPostSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
+  content: z.string().min(1, 'Content is required').max(500, 'Content must be less than 500 characters'),
+  image: z.string().optional(),
+  platforms: z.array(z.enum(['twitter', 'facebook', 'instagram', 'linkedin'])).min(1, 'Select at least one platform'),
+  scheduledDate: z.string().min(1, 'Date is required'),
+  scheduledTime: z.string().min(1, 'Time is required'),
+});
+
+type CreatePostFormData = z.infer<typeof createPostSchema>;
 
 interface CreatePostFormProps {
   onSubmit: (post: {
@@ -18,71 +33,77 @@ interface CreatePostFormProps {
     scheduledDate: string;
     scheduledTime: string;
   }) => void;
+  editingPost?: ScheduledPost | null;
+  onCancelEdit?: () => void;
 }
 
-export function CreatePostForm({ onSubmit }: CreatePostFormProps) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState<string | null>(null);
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
+export function CreatePostForm({ onSubmit, editingPost, onCancelEdit }: CreatePostFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = useForm<CreatePostFormData>({
+    resolver: zodResolver(createPostSchema),
+    defaultValues: {
+      title: '',
+      content: '',
+      image: '',
+      platforms: [],
+      scheduledDate: '',
+      scheduledTime: '',
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!title.trim()) {
-      toast.error('Please enter a title');
-      return;
+  // Update form when editing post changes
+  React.useEffect(() => {
+    if (editingPost) {
+      setValue('title', editingPost.title);
+      setValue('content', editingPost.content);
+      setValue('image', editingPost.image || '');
+      setValue('platforms', editingPost.platforms);
+      setValue('scheduledDate', editingPost.scheduledDate);
+      setValue('scheduledTime', editingPost.scheduledTime);
+    } else {
+      reset();
     }
+  }, [editingPost, setValue, reset]);
 
-    if (!content.trim()) {
-      toast.error('Please enter content');
-      return;
-    }
+  const watchedPlatforms = watch('platforms');
+  const watchedImage = watch('image');
 
-    if (platforms.length === 0) {
-      toast.error('Please select at least one platform');
-      return;
-    }
-
-    if (!scheduledDate) {
-      toast.error('Please select a date');
-      return;
-    }
-
-    if (!scheduledTime) {
-      toast.error('Please select a time');
-      return;
-    }
-
+  const onSubmitForm = (data: CreatePostFormData) => {
     onSubmit({
-      title: title.trim(),
-      content: content.trim(),
-      image: image || undefined,
-      platforms,
-      scheduledDate,
-      scheduledTime,
+      title: data.title,
+      content: data.content,
+      image: data.image || undefined,
+      platforms: data.platforms,
+      scheduledDate: data.scheduledDate,
+      scheduledTime: data.scheduledTime,
     });
 
-    // Reset form
-    setTitle('');
-    setContent('');
-    setImage(null);
-    setPlatforms([]);
-    setScheduledDate('');
-    setScheduledTime('');
+    if (!editingPost) {
+      reset();
+    }
+    toast.success(editingPost ? 'Post updated successfully!' : 'Post scheduled successfully!');
+  };
 
-    toast.success('Post scheduled successfully!');
+  const handleCancel = () => {
+    reset();
+    onCancelEdit?.();
   };
 
   return (
     <Card className="shadow-card">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">Create New Post</CardTitle>
+        <CardTitle className="text-lg font-semibold">
+          {editingPost ? 'Edit Post' : 'Create New Post'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-primary">
               Title
@@ -90,10 +111,12 @@ export function CreatePostForm({ onSubmit }: CreatePostFormProps) {
             <Input
               id="title"
               placeholder="Enter post title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register('title')}
               className="bg-background"
             />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -103,16 +126,27 @@ export function CreatePostForm({ onSubmit }: CreatePostFormProps) {
             <Textarea
               id="content"
               placeholder="What's on your mind?"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              {...register('content')}
               rows={4}
               className="bg-background resize-y"
             />
+            {errors.content && (
+              <p className="text-sm text-destructive">{errors.content.message}</p>
+            )}
           </div>
 
-          <ImageUpload image={image} onChange={setImage} />
+          <ImageUpload
+            image={watchedImage}
+            onChange={(value) => setValue('image', value || '')}
+          />
 
-          <PlatformSelector selected={platforms} onChange={setPlatforms} />
+          <PlatformSelector
+            selected={watchedPlatforms}
+            onChange={(platforms) => setValue('platforms', platforms)}
+          />
+          {errors.platforms && (
+            <p className="text-sm text-destructive">{errors.platforms.message}</p>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-primary">Schedule Date & Time</label>
@@ -121,27 +155,38 @@ export function CreatePostForm({ onSubmit }: CreatePostFormProps) {
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
+                  {...register('scheduledDate')}
                   className="pl-10 bg-background"
                   min={new Date().toISOString().split('T')[0]}
                 />
+                {errors.scheduledDate && (
+                  <p className="text-sm text-destructive">{errors.scheduledDate.message}</p>
+                )}
               </div>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type="time"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
+                  {...register('scheduledTime')}
                   className="pl-10 bg-background"
                 />
+                {errors.scheduledTime && (
+                  <p className="text-sm text-destructive">{errors.scheduledTime.message}</p>
+                )}
               </div>
             </div>
           </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            Schedule Post
-          </Button>
+          <div className="flex gap-3">
+            <Button type="submit" className="flex-1" size="lg">
+              {editingPost ? 'Update Post' : 'Schedule Post'}
+            </Button>
+            {editingPost && (
+              <Button type="button" variant="outline" onClick={handleCancel} size="lg">
+                Cancel
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>

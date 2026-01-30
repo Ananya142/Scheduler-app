@@ -1,12 +1,13 @@
 import { ScheduledPost, Platform } from '@/types/post';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Twitter, Facebook, Instagram, Linkedin, Calendar, Clock, Trash2 } from 'lucide-react';
+import { Twitter, Facebook, Instagram, Linkedin, Calendar, Clock, Trash2, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface PostCardProps {
   post: ScheduledPost;
   onDelete: (id: string) => void;
+  onEdit: (post: ScheduledPost) => void;
 }
 
 const platformIcons: Record<Platform, React.ReactNode> = {
@@ -23,7 +24,7 @@ const platformColors: Record<Platform, string> = {
   linkedin: 'bg-linkedin',
 };
 
-export function PostCard({ post, onDelete }: PostCardProps) {
+export function PostCard({ post, onDelete, onEdit }: PostCardProps) {
   const formattedDate = format(new Date(post.scheduledDate), 'MMM dd, yyyy');
 
   return (
@@ -65,14 +66,24 @@ export function PostCard({ post, onDelete }: PostCardProps) {
             </span>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(post.id)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(post)}
+              className="text-muted-foreground hover:text-foreground h-8 w-8 p-0"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(post.id)}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
